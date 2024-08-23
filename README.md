@@ -1,16 +1,10 @@
 # Todo
-- add link to FreeOrderFlow repo
 - make readme pretty
+- fix MoldyHighlights text and lookback period
 
-# Explaination
-## Außenstäbe
-- triangle pointing in their direction at their feet
-- normal red / green colored 
+The indicators are not intended to be used as they are but to be inspiration
 
-## Outsidebars
-- arrows pointing outside
-- normal green / red
 
-## Insidebars
-- arrows pointing inwards
-- pale green / red 
+This repo hashas the nt8 Order Flow indicators for free and open source: https://github.com/trading-code/ninjatrader-freeorderflow/tree/main
+
+I will not be working on this repo anymore.
