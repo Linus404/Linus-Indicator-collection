@@ -19,6 +19,15 @@
 ## NinjaTrader
 - MoldyBars:
   - Custom candle stick bars for inside bars, outside bars, Außenstäbe and default bars
+ 
+## Python
+- get_bias:
+  - Takes yfinance tickers as input
+  - Prints Hurst exponent
+  - Prints ADF test
+  - Prints short-term direction based on the mean of recent returns
+  - Prints volatility level
+  - Prints recent returns and recent volatility 
 
 ## Further information
 This repo has the nt8 Order Flow indicators for free and open source: github.com/trading-code/ninjatrader-freeorderflow
