@@ -195,3 +195,18 @@ plot(prevHigh, "Prev Day High", color=color.red, linewidth=2)
 plot(prevLow, "Prev Day Low", color=color.green, linewidth=2)
 plot(prevClose, "Prev Day Close", color=color.blue, linewidth=2)
 //#endregion
+
+
+//#region                         ATR
+ATR_GROUP = "ATR Settings"
+showATR = input.bool(true, "Show ATR", group=ATR_GROUP)
+atrPeriod = input.int(14, "ATR Period", minval=1, group=ATR_GROUP)
+atrMultiplier = input.float(1.0, "ATR Band Multiplier", step=0.1, group=ATR_GROUP)
+
+atrValue = ta.atr(atrPeriod)
+upperATRBand = high + atrValue * atrMultiplier
+lowerATRBand = low - atrValue * atrMultiplier
+
+plot(showATR ? upperATRBand : na, "Upper ATR Band", color=color.rgb(255, 82, 82, 50), linewidth=1)
+plot(showATR ? lowerATRBand : na, "Lower ATR Band", color=color.rgb(255, 82, 82, 50), linewidth=1)
+//#endregion
