@@ -26,11 +26,7 @@
 ## Python
 - get_bias:
   - Takes yfinance tickers as input
-  - Prints Hurst exponent
-  - Prints ADF test
-  - Prints short-term direction based on the mean of recent returns
-  - Prints volatility level
-  - Prints recent returns and recent volatility 
+  - Creates a table with Hurst Exponent and volatility of the last 5 and 30 days
 
 ## Further information
 This [repo](https://www.github.com/trading-code/ninjatrader-freeorderflow) has the nt8 Order Flow indicators for free and open source
