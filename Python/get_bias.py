@@ -1,86 +1,115 @@
 import numpy as np
 import pandas as pd
 import yfinance as yf
-from hurst import compute_Hc
-from statsmodels.tsa.stattools import adfuller
 from datetime import datetime, timedelta
+import tkinter as tk
+from tkinter import ttk
+from hurst import compute_Hc
 
+# Function to calculate the average candle volatility (in %)
+def calculate_average_volatility(data):
+    candle_volatility = ((data['High'] - data['Low']) / data['Close']) * 100
+    average_volatility = candle_volatility.mean()
+    return average_volatility
+
+# Function to calculate the Hurst exponent
 def calculate_hurst_exponent(data):
     H, _, _ = compute_Hc(data, kind='price', simplified=True)
     return H
 
-def perform_adf_test(data):
-    result = adfuller(data)
-    return result[1]  # p-value
+# Function to fetch 30-minute data for 5-day analysis
+def fetch_data_30min(ticker, start_date, end_date):
+    return yf.download(ticker, start=start_date, end=end_date, interval='30m', progress=False)
 
-def calculate_returns(data):
-    return np.log(data / data.shift(1)).dropna()
+# Function to fetch 1-hour data for 30-day analysis
+def fetch_data_1h(ticker, start_date, end_date):
+    return yf.download(ticker, start=start_date, end=end_date, interval='1h', progress=False)
 
-def fetch_data(ticker, start_date, end_date):
-    data = yf.download(ticker, start=start_date, end=end_date, interval='1h', progress=False)
-    return data['Close']
-
-def analyze_asset(ticker):
+# Analyze 5-day volatility and Hurst exponent using 30-minute bars
+def analyze_5d(ticker):
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=30)  # Fetch 30 days of data
-    
-    prices = fetch_data(ticker, start_date, end_date)
-    
-    # Use the last 5 days (120 hours) for analysis
-    analysis_window = prices.iloc[-120:]
-    returns = calculate_returns(analysis_window)
-    
-    H = calculate_hurst_exponent(analysis_window)
-    adf_p = perform_adf_test(analysis_window)
-    recent_return = returns.mean()
-    recent_volatility = returns.std() * np.sqrt(252 * 24)  # Annualized volatility
-    
-    return H, adf_p, recent_return, recent_volatility
+    start_date = end_date - timedelta(days=5)
+    prices = fetch_data_30min(ticker, start_date, end_date)
+    volatility = calculate_average_volatility(prices)
+    hurst = calculate_hurst_exponent(prices['Close'].values)
+    return volatility, hurst
 
-def interpret_results(H, adf_p, recent_return, recent_volatility):
-    if H > 0.6:
-        hurst_interp = "strongly trending"
-    elif 0.5 < H <= 0.6:
-        hurst_interp = "weakly trending"
-    elif 0.4 <= H <= 0.5:
-        hurst_interp = "ranging"
-    else:
-        hurst_interp = "mean-reverting"
-    
-    adf_interp = "stationary" if adf_p < 0.05 else "non-stationary"
-    
-    if recent_return > 0:
-        direction = "upward"
-    elif recent_return < 0:
-        direction = "downward"
-    else:
-        direction = "neutral"
-    
-    volatility_level = "high" if recent_volatility > 0.3 else "low"
-    
-    return hurst_interp, adf_interp, direction, volatility_level
+# Analyze 30-day volatility and Hurst exponent using 1-hour bars
+def analyze_30d(ticker):
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=30)
+    prices = fetch_data_1h(ticker, start_date, end_date)
+    volatility = calculate_average_volatility(prices)
+    hurst = calculate_hurst_exponent(prices['Close'].values)
+    return volatility, hurst
 
-tickers = {
-    'Gold': 'GC=F',
-    'Corn': 'ZC=F',
-    'Japanese Yen': '6J=F',
-    'Oil': 'CL=F',
-    'S&P500': 'ES=F'
-}
-
-for asset_name, ticker in tickers.items():
-    try:
-        H, adf_p, recent_return, recent_volatility = analyze_asset(ticker)
-        hurst_interp, adf_interp, direction, volatility_level = interpret_results(H, adf_p, recent_return, recent_volatility)
+# Function to run analysis for all assets and return results
+def analyze_assets():
+    tickers = {
+        'Gold': 'GC=F',
+        'Jap Yen': '6J=F',
+        'Oil': 'CL=F',
+        'S&P500': 'ES=F',
+        'Gas': 'NG=F'
+    }
+    
+    results = []
+    
+    for asset_name, ticker in tickers.items():
+        try:
+            vol_5d, hurst_5d = analyze_5d(ticker)
+            vol_30d, hurst_30d = analyze_30d(ticker)
+            
+            results.append({
+                'Asset': asset_name,
+                'Volatility (5D)': f"{vol_5d:.2f}%",
+                'Volatility (30D)': f"{vol_30d:.2f}%",
+                'Hurst (5D)': f"{hurst_5d:.4f}",
+                'Hurst (30D)': f"{hurst_30d:.4f}"
+            })
         
-        print(f"{asset_name} ({ticker}) 5-Day Analysis:")
-        print(f"Hurst exponent: {H:.4f} ({hurst_interp})")
-        print(f"ADF test: {adf_p:.1%} ({adf_interp})")
-        print(f"Short-term direction: {direction}")
-        print(f"Volatility level: {volatility_level}")
-        print(f"Recent return: {recent_return:.2%}")
-        print(f"Recent volatility: {recent_volatility:.2%} (annualized)")
-        print()
-    except Exception as e:
-        print(f"Error analyzing {asset_name} ({ticker}): {str(e)}")
-        print()
+        except Exception as e:
+            results.append({
+                'Asset': asset_name,
+                'Volatility (5D)': 'Error',
+                'Volatility (30D)': 'Error',
+                'Hurst (5D)': 'Error',
+                'Hurst (30D)': 'Error'
+            })
+    
+    return results
+
+# Function to display results in a tkinter window
+def display_results():
+    results = analyze_assets()
+    
+    # Create main window
+    window = tk.Tk()
+    window.title("Market Analysis Results")
+    
+    # Create a table with columns for the analysis results
+    columns = ("Asset", "Volatility (5D)", "Volatility (30D)", "Hurst (5D)", "Hurst (30D)")
+    tree = ttk.Treeview(window, columns=columns, show="headings")
+    
+    # Define headings
+    for col in columns:
+        tree.heading(col, text=col)
+    
+    # Insert data into the table
+    for result in results:
+        tree.insert("", "end", values=(result["Asset"], result["Volatility (5D)"], result["Volatility (30D)"], 
+                                       result["Hurst (5D)"], result["Hurst (30D)"]))
+    
+    # Pack the table into the window and expand
+    tree.pack(fill=tk.BOTH, expand=True)
+    
+    # Set column widths
+    for col in columns:
+        tree.column(col, width=150)
+    
+    # Run the tkinter main loop
+    window.geometry("900x250")
+    window.mainloop()
+
+# Run the display function
+display_results()
